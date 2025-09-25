@@ -1,0 +1,25 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Build Backend
+      run: mvn -f backend/pom.xml clean package -DskipTests
+    - name: Build and Push Docker Images
+      run: |
+        echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+        docker build -t mydockerhub/banking-backend ./backend
+        docker build -t mydockerhub/banking-frontend ./frontend
+        docker push mydockerhub/banking-backend
+        docker push mydockerhub/banking-frontend
